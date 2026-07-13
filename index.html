@@ -56,6 +56,7 @@
             <button class="chip-btn" id="shareBtn">📋 Copy</button>
             <button class="chip-btn" id="archiveBtn">📖 Look back</button>
             <button class="chip-btn" id="guessBtn">🎯 Guess</button>
+            <button class="chip-btn" id="askBtn">💬 Ask</button>
           </div>
         </div>
 
@@ -82,6 +83,20 @@
         <button class="chip-btn" id="closeRewards">✕</button>
       </div>
       <div id="rewardsBody"></div>
+    </div>
+  </div>
+
+  <div class="archive-overlay" id="askOverlay" hidden>
+    <div class="archive-panel ask-panel">
+      <div class="archive-head">
+        <span>💬 Ask about the facts</span>
+        <button class="chip-btn" id="closeAsk">✕</button>
+      </div>
+      <div class="ask-messages" id="askMessages"></div>
+      <form class="ask-form" id="askForm">
+        <input type="text" id="askInput" placeholder="Ask a question…" autocomplete="off">
+        <button type="submit" class="chip-btn">Send</button>
+      </form>
     </div>
   </div>
 

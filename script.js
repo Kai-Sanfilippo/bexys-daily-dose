@@ -26,6 +26,7 @@ applyDayPalette();
 const CATEGORIES = {
   health: {
     facts: HEALTH_FACTS,
+    questions: HEALTH_QUESTIONS,
     label: "Today's Women's Health Fact",
     archiveTitle: 'Past Health Facts',
     icon: '🌱',
@@ -34,6 +35,7 @@ const CATEGORIES = {
   },
   disney: {
     facts: DISNEY_FACTS,
+    questions: DISNEY_QUESTIONS,
     label: "Today's Disney Fact",
     archiveTitle: 'Past Disney Facts',
     icon: '🏰',
@@ -437,42 +439,43 @@ function guessKey() {
 }
 
 function renderDailyGuess() {
-  const played = localStorage.getItem(guessKey());
-  if (played) {
-    rewardsBody.innerHTML = `
-      <div class="quiz-result">
-        <p class="quiz-score">${played === 'correct' ? '🎯' : '🤔'}</p>
-        <p>${played === 'correct' ? 'You already got today\'s guess right!' : 'You already played today — see you tomorrow!'}</p>
-      </div>
-    `;
-    return;
-  }
-
   const conf = CATEGORIES[activeCat];
-  const correctFact = factForDate(conf.facts, new Date());
-  const decoy = shuffle(conf.facts.filter((f) => f !== correctFact))[0];
-  const options = shuffle([correctFact, decoy]);
+  const today = factForDate(conf.questions, new Date());
+  const played = JSON.parse(localStorage.getItem(guessKey()) || 'null');
+
+  // reuse the same decoy answer shown the first time, so reopening today
+  // shows the exact same two options rather than a freshly randomized pair.
+  const decoyAnswer = played ? played.decoyAnswer : shuffle(conf.questions.filter((x) => x.a !== today.a))[0].a;
+  const options = played ? played.options : shuffle([today.a, decoyAnswer]);
 
   rewardsBody.innerHTML = `
-    <p class="quiz-prompt">Which of these is today's real ${conf.label.replace("Today's ", '').toLowerCase()}?</p>
+    <p class="quiz-prompt">${today.q}</p>
     <div class="quiz-options" id="guessOptions"></div>
+    ${played ? `<p class="archive-empty">${played.pickedCorrect ? 'You got today\'s guess right! 🎯' : 'Not quite — the real answer is highlighted above.'}</p>` : ''}
   `;
   const optsEl = document.getElementById('guessOptions');
-  options.forEach((fact) => {
+  options.forEach((answer) => {
     const btn = document.createElement('button');
     btn.className = 'quiz-opt';
-    btn.textContent = fact;
-    btn.addEventListener('click', () => {
-      [...optsEl.children].forEach((b) => { b.disabled = true; });
-      const isCorrect = fact === correctFact;
-      btn.classList.add(isCorrect ? 'correct' : 'wrong');
-      if (!isCorrect) {
-        const correctBtn = [...optsEl.children].find((b) => b.textContent === correctFact);
-        if (correctBtn) correctBtn.classList.add('correct');
-      }
-      localStorage.setItem(guessKey(), isCorrect ? 'correct' : 'wrong');
-      setTimeout(renderDailyGuess, 1100);
-    });
+    btn.textContent = answer;
+
+    if (played) {
+      btn.disabled = true;
+      if (answer === today.a) btn.classList.add('correct');
+      else if (answer === played.picked) btn.classList.add('wrong');
+    } else {
+      btn.addEventListener('click', () => {
+        [...optsEl.children].forEach((b) => { b.disabled = true; });
+        const isCorrect = answer === today.a;
+        btn.classList.add(isCorrect ? 'correct' : 'wrong');
+        if (!isCorrect) {
+          const correctBtn = [...optsEl.children].find((b) => b.textContent === today.a);
+          if (correctBtn) correctBtn.classList.add('correct');
+        }
+        localStorage.setItem(guessKey(), JSON.stringify({ options, decoyAnswer, picked: answer, pickedCorrect: isCorrect }));
+        renderDailyGuess();
+      });
+    }
     optsEl.appendChild(btn);
   });
 }
@@ -533,3 +536,74 @@ function updateCountdown() {
 }
 updateCountdown();
 setInterval(updateCountdown, 1000);
+
+// ---------- ask about the facts ----------
+
+const ALL_FACTS = [
+  ...HEALTH_FACTS.map((fact) => ({ cat: 'health', fact })),
+  ...DISNEY_FACTS.map((fact) => ({ cat: 'disney', fact })),
+];
+
+const ASK_STOPWORDS = new Set([
+  'the', 'and', 'for', 'are', 'was', 'were', 'that', 'this', 'with', 'have', 'has', 'had',
+  'not', 'but', 'you', 'your', 'what', 'whats', 'why', 'how', 'when', 'who', 'whos', 'does',
+  'did', 'can', 'could', 'would', 'should', 'about', 'from', 'into', 'than', 'then', 'them',
+  'they', 'their', 'its', 'tell', 'me', 'please', 'any', 'all', 'today', 'tomorrow', 'yesterday',
+]);
+
+function askKeywords(text) {
+  return text.toLowerCase().replace(/'s\b/g, '').replace(/'/g, '').replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+    .filter((w) => w.length > 2 && !ASK_STOPWORDS.has(w));
+}
+
+function answerQuestion(question) {
+  const qWords = askKeywords(question);
+  if (qWords.length === 0) return 'Try asking with a few more words, like "why does..." or "what is...".';
+
+  let best = null;
+  let bestScore = 0;
+  ALL_FACTS.forEach(({ fact }) => {
+    const factWords = new Set(askKeywords(fact));
+    const score = qWords.filter((w) => factWords.has(w)).length;
+    if (score > bestScore) { bestScore = score; best = fact; }
+  });
+
+  // require at least 2 shared keywords once the question has more than one, so a single
+  // coincidental overlap (e.g. "tomorrow") doesn't surface an unrelated fact.
+  const minScore = qWords.length === 1 ? 1 : 2;
+  if (!best || bestScore < minScore) return "I don't have a fact covering that yet — good one to look up or ask a real PA about! 🌿";
+  return best;
+}
+
+const askOverlay = document.getElementById('askOverlay');
+const askMessages = document.getElementById('askMessages');
+const askInput = document.getElementById('askInput');
+
+function addAskMessage(role, text) {
+  const div = document.createElement('div');
+  div.className = `ask-msg ${role}`;
+  div.textContent = text;
+  askMessages.appendChild(div);
+  askMessages.scrollTop = askMessages.scrollHeight;
+}
+
+document.getElementById('askBtn').addEventListener('click', () => {
+  askOverlay.hidden = false;
+  if (!askMessages.children.length) {
+    addAskMessage('bot', "Hi! Ask me anything about the facts on this site 🌿🏰 (I search what's already here — I'm not a full AI, so keep it to topics covered in Health or Disney facts.)");
+  }
+  askInput.focus();
+});
+document.getElementById('closeAsk').addEventListener('click', () => { askOverlay.hidden = true; });
+askOverlay.addEventListener('click', (e) => {
+  if (e.target === askOverlay) askOverlay.hidden = true;
+});
+
+document.getElementById('askForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const q = askInput.value.trim();
+  if (!q) return;
+  addAskMessage('user', q);
+  askInput.value = '';
+  setTimeout(() => addAskMessage('bot', answerQuestion(q)), 300);
+});
