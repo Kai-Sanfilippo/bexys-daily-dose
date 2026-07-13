@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bexy's Daily Dose</title>
+<meta name="description" content="A new fact, every day.">
+<meta name="theme-color" content="#eaf7ee">
+<meta property="og:title" content="Bexy's Daily Dose">
+<meta property="og:description" content="A new fact, every day.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <main class="wrap">
+    <header class="top">
+      <span class="eyebrow">Bexy's Daily Dose</span>
+      <div class="top-right">
+        <span class="streak" id="streak" hidden></span>
+        <button class="rewards-btn" id="rewardsBtn">🎁</button>
+      </div>
+    </header>
+
+    <div class="tabs" id="tabs">
+      <button class="tab-btn" data-cat="health">🌿 Health</button>
+      <button class="tab-btn" data-cat="disney">🏰 Disney</button>
+    </div>
+
+    <div class="garden" id="garden">
+      <div class="garden-dots" id="gardenDots"></div>
+      <p class="garden-label" id="gardenLabel"></p>
+    </div>
+
+    <p class="date" id="date"></p>
+
+    <div class="flip-card" id="flipCard">
+      <div class="flip-inner" id="flipInner">
+
+        <div class="flip-front">
+          <button class="reveal-btn" id="revealBtn">
+            <span class="sprout" id="revealIcon">🌱</span>
+            <span id="revealText">Tap to reveal today's fact</span>
+          </button>
+        </div>
+
+        <div class="flip-back">
+          <p class="label" id="factLabel">Today's Women's Health Fact</p>
+          <p class="fact" id="fact"></p>
+          <div class="actions">
+            <button class="chip-btn" id="shareBtn">📋 Copy</button>
+            <button class="chip-btn" id="archiveBtn">📖 Look back</button>
+            <button class="chip-btn" id="guessBtn">🎯 Guess</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p class="countdown" id="countdown"></p>
+  </main>
+
+  <div class="archive-overlay" id="archiveOverlay" hidden>
+    <div class="archive-panel">
+      <div class="archive-head">
+        <span id="archiveTitle">Past Facts</span>
+        <button class="chip-btn" id="closeArchive">✕</button>
+      </div>
+      <div class="archive-list" id="archiveList"></div>
+    </div>
+  </div>
+
+  <div class="archive-overlay" id="rewardsOverlay" hidden>
+    <div class="archive-panel">
+      <div class="archive-head">
+        <span id="rewardsTitle">🎁 Weekly Rewards</span>
+        <button class="chip-btn" id="closeRewards">✕</button>
+      </div>
+      <div id="rewardsBody"></div>
+    </div>
+  </div>
+
+  <div class="confetti-layer" id="confettiLayer"></div>
+
+  <script src="facts.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
